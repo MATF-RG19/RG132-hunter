@@ -2,18 +2,60 @@
 #include<GL/glut.h>
 #include<math.h>
 #include <stdlib.h>
-#define PI 3.14
+#include<string.h>
+#define PI 3.14159265359
 
-float lx=0.0f,lz=-1.0f;
-float x=0.0f,z=5.0f, y=0;
-float angle = 0.0f;
+//Vektor kamere
+float lx=0.0f,lz=-1.0f, ly=0.0f;
+//pozicija kamere(igraca)
+float x=5.0f, z=9.0f,  y=0.0f;
+
+float angle_x=0.0f, angle_y=0.0f;
+
+GLfloat mouse_x, mouse_y;
+
+float sensitivity_of_mouse = 0.2;
+
+
+// Odbrojavanje do kraja igre 
+GLfloat game_time = 0;
+int game_over;
+
+GLfloat diff_time;
+GLfloat beginTime;
+
+char disp_time[1000];
+int tmp;
+
+
+// Broj osvojenih bodova
+int score;
+char disp_score[256];
+
+static int timer_ongoing;
+
+// Tajmer za ispucavanje kuglice 
+float t;
+static int move_ball;
+
+// Trenutne koordinate kuglice 
+float x_ball; 
+float y_ball; 
+float z_ball; 
+
+// Vektor pravca kuglice
+float bx;
+float by;
+float bz;
+
+// Brzina kuglice 
+float v;
 
 
 float random_x[5]; 
 float random_y[5];
 float random_z[5];
-//vreme proteklo od pocetka simulacije
-//static float hours;
+
 static int window_width, window_height;
 static void on_display();
 static void on_keyboard(unsigned char key, int x, int y);
@@ -21,13 +63,18 @@ static void on_reshape(int width, int height);
 static void specialKeys(int key, int xx, int yy);
 static void random_position_for_bears();
 
-//static void on_timer(int value);
 
 static void draw_wood();
 static void draw_bear();
 static void initialize();
 
-
+//
+static void on_timer(int value);
+static void on_mouse_motion(int x, int y);
+static void moving_ball(int value);
+static void shoot();
+static void on_mouse(int button, int state, int x, int y);
+static void drawPointer() ;
 
 int main(int argc, char** argv)
 {
@@ -45,6 +92,9 @@ int main(int argc, char** argv)
     glutDisplayFunc(on_display);
     glutReshapeFunc(on_reshape);
     glutSpecialFunc(specialKeys);
+    glutMouseFunc(on_mouse);
+	glutPassiveMotionFunc(on_mouse_motion);
+	
 
     glutFullScreen();
     
@@ -80,13 +130,35 @@ static void initialize()
     glEnable(GL_NORMALIZE);
     glEnable(GL_COLOR_MATERIAL);
     
-     for(int i=0; i<5; i++)
+     for(int i=0; i<4; i++)
     {
-        random_x[i] = rand()/(float)RAND_MAX *9;
+        //random_x[i] = rand()/(float)RAND_MAX *9;
+        random_x[i] = rand()/(float)RAND_MAX *6;
         random_y[i] = rand() / (float)RAND_MAX;
-        random_z[i] = rand() / (float)RAND_MAX *8;
+      //  random_z[i] = rand() / (float)RAND_MAX *8;
+        random_z[i] = rand() / (float)RAND_MAX *5;
+
+        
     }
-    
+   
+   
+    // Odbrojavanje do kraja igre 
+	game_over = 0;
+	game_time = 0;
+	
+    timer_ongoing = 0;
+	
+		
+	t = 0;
+	move_ball = 0;
+	
+        bx = 0.0f;
+	by = 0.0f;
+	bz = -1.0f;
+
+    	v = 8.0f;
+	
+	score = 0;
     
     glEnable(GL_LIGHTING);
     glEnable(GL_LIGHT0);
@@ -122,14 +194,45 @@ static void on_keyboard(unsigned char key, int x, int y)
         case 27:
             exit(0);
             break;
-        case 'r':
-        case 'R':
-            //namestiti timer na 0 opet
-            break;
+        case 'g':
+		case 'G':
+			if(!timer_ongoing){
+				glutTimerFunc(0, on_timer, 0);
+				beginTime = glutGet(GLUT_ELAPSED_TIME);
+				score = 0;
+				timer_ongoing = 1;
+			}
+			break;
+		
     }
     
     
 }
+
+static void on_timer(int value){
+	/* Provera da li callback dolazi od ogovarajuceg tajmera */
+	if(value != 0)
+		return;
+
+    //Broji milisekunde od prethodnog poziva ove f-je	
+	float newTime = glutGet(GLUT_ELAPSED_TIME);
+    
+	diff_time = (newTime - beginTime)/1000.;
+	beginTime = newTime; 
+ 	game_time += diff_time; // odbrojavanje do kraja igre
+	
+	
+	if(game_time >= 30.00){
+		game_over = 1;
+		timer_ongoing = 0;
+        printf("Kraj igre!\n Osvojeni broj poena je: %d\n", score);
+        exit(0);
+	}
+	
+	if(timer_ongoing)
+		glutTimerFunc(0, on_timer, 0);
+}
+
 
 
 void draw_wood(){
@@ -142,9 +245,9 @@ void draw_wood(){
         glNormal3f(0, 1, 0);
 
         glVertex3f(10, 0, 10);
-        glVertex3f(10, 0, -10);
-        glVertex3f(-10, 0, -10);
-        glVertex3f(-10, 0, 10);
+        glVertex3f(10, 0, -5);
+        glVertex3f(-1, 0, -5);
+        glVertex3f(-1, 0, 10);
     glEnd();
 
     // Levi zid 
@@ -153,10 +256,10 @@ void draw_wood(){
     glBegin(GL_POLYGON);
         glNormal3f(1, 0, 0);
             
-        glVertex3f(-10, 0, 10);
-        glVertex3f(-10, 0, -10);
-        glVertex3f(-10, 5, -10);
-        glVertex3f(-10, 5, 10);
+        glVertex3f(-1, 0, 10);
+        glVertex3f(-1, 0, -5);
+        glVertex3f(-1, 5, -5);
+        glVertex3f(-1, 5, 10);
     glEnd();
    
     
@@ -166,8 +269,8 @@ void draw_wood(){
     glBegin(GL_POLYGON);
         glNormal3f(-1, 0, 0);
         
-        glVertex3f(10, 0, -10);
-        glVertex3f(10, 5, -10);
+        glVertex3f(10, 0, -5);
+        glVertex3f(10, 5, -5);
         glVertex3f(10, 5, 10);
         glVertex3f(10, 0, 10);
     glEnd();
@@ -179,10 +282,10 @@ void draw_wood(){
     glBegin(GL_POLYGON);
         glNormal3f(0, 0, 1);
         
-        glVertex3f(-10, 0, -10);
-        glVertex3f(10, 0, -10);
-        glVertex3f(10, 5, -10);
-        glVertex3f(-10, 5, -10);
+        glVertex3f(-1, 0, -5);
+        glVertex3f(10, 0, -5);
+        glVertex3f(10, 5, -5);
+        glVertex3f(-1, 5, -5);
     glEnd();
     
     // Zadnji zid
@@ -191,10 +294,10 @@ void draw_wood(){
     glBegin(GL_POLYGON);
         glNormal3f(0, 0, -1);
         
-        glVertex3f(-10, 0, 10);
+        glVertex3f(-1, 0, 10);
         glVertex3f(10, 0, 10);
         glVertex3f(10, 5, 10);
-        glVertex3f(-10, 5, 10);
+        glVertex3f(-1, 5, 10);
     glEnd();
     
     // Plafona 
@@ -203,10 +306,10 @@ void draw_wood(){
     glBegin(GL_POLYGON);
         glNormal3f(0, -10, 0);
         
-        glVertex3f(-10, 5, 10);
+        glVertex3f(-1, 5, 10);
         glVertex3f(10, 5, 10);
-        glVertex3f(10, 5, -10);
-        glVertex3f(-10, 5, -10);
+        glVertex3f(10, 5, -5);
+        glVertex3f(-1, 5, -5);
     glEnd();
     
 }
@@ -214,7 +317,7 @@ void draw_wood(){
 
 static void draw_bear()
 {
-    glTranslatef(0,0.75,0);
+    glTranslatef(0,0.65,0);
     
     glPushMatrix();
     glColor3f(0.54, 0.29, 0.07);
@@ -239,71 +342,75 @@ static void draw_bear()
 
 static void specialKeys(int key, int xx, int yy)
 {
-
+/*
     float fraction = 0.1f;
 
-    switch (key) {
-    case GLUT_KEY_RIGHT:
-        if (x > 9.9)
-            x -= 1;
-        else if (z < -9.9)
-            z += 1;
-        else if (z > 9.9)
-            z -= 1;
-        else if (x < -9.9)
-            x += 1;
-        
+  */ float fraction = 0.15f;
+    
+    switch(key){
+    case GLUT_KEY_LEFT:
+        if (x > 9.5)
+            x -= 0.25;
+         else if (x < -0.55)
+            x += 0.25;
+        else if (z < -4.5)
+            z += 0.25;
+        else if (z > 9.5)
+            z -= 0.25;
+       
         else {
             x += lz * fraction;
             z -= lx * fraction;
         }
         break;
-    case GLUT_KEY_LEFT:
-        if (x > 9.9)
-            x -= 1;
-        else if (z < -9.9)
-            z += 1;
-        else if (z > 9.9)
-            z -= 1;
-        else if (x < -9.9)
-            x += 1;
+    case GLUT_KEY_RIGHT:
+         if (x > 9.5)
+            x -= 0.25;
+         else if (x < -0.55)
+            x += 0.25;
+        else if (z < -4.5)
+            z += 0.25;
+        else if (z > 9.5)
+            z -= 0.25;
+       
         
         else {
             x -= lz * fraction;
             z += lx * fraction;
         }
         break;
-  /*      case GLUT_KEY_UP :
-            if (x > 9.9)
-                x -= 0.25;
-            else if (z < -9.9)
-                z += 0.25;
-            else if (z > 9.9)
-                z -= 0.25;
-            else if (x < -9.9)
-                x += 0.25;
-            else{
-            x += lx * fraction;
-            z += lz * fraction;
-            }
-            break;
-        case GLUT_KEY_DOWN :
-              if (x < -9.9)
-                x += 0.25;
-            else if( z > 9.9)
-                z -= 0.25;
-            else if (z < -9.9)
-                z += 0.25;
-            else if (x > 9.9)
-                x -= 0.25;  
-            else{
-            x -= lx * fraction;
-            z -= lz * fraction;
-            }
-            break;
-   */ }
-  glutPostRedisplay();
+    case GLUT_KEY_UP:
+         if (x > 9)
+            x -= 0.25;
+         else if (x < -0.5)
+            x += 0.25;
+        else if (z < -4)
+            z += 0.25;
+        else if (z > 9)
+            z -= 0.25;
+       
+        else{
+           x += lx * fraction;
+           z += lz * fraction;
+        }
+        break;
+    case GLUT_KEY_DOWN:
+        if (x > 9)
+            x -= 0.25;
+         else if (x < -0.5)
+            x += 0.25;
+        else if (z < -4)
+            z += 0.25;
+        else if (z > 9)
+            z -= 0.25;
+       
+        else{
+           x -= lx * fraction;
+           z -= lz * fraction;
+        }
+        break;
     
+    }  
 }
 
 static void on_display()
@@ -313,30 +420,203 @@ static void on_display()
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
     
-    gluLookAt( x, 1, -6,
-                x+lx, 1, z+lz,
+    gluLookAt( x, 1, z,
+                x+lx, 1+ly, z+lz,
                 0, 1, 0);
     
     draw_axis(15);
     draw_wood();
     random_position_for_bears();
     
+    // Koordinate kuglice- inicijalizacija
+    	x_ball = x;
+	y_ball =y;
+	z_ball = z;
+	shoot();
+    
+    drawPointer(); 
+    
+    
     glutSwapBuffers();
 }
 
 static void random_position_for_bears()
 {
-     for(int i = 0; i < 5; i++)
+     for(int i = 0; i < 4; i++)
     {
 			glPushMatrix();
                 if(i%2==0)
+                    if((-1*random_x[i]) < -1)
+                    glTranslatef(random_x[i]*0.5,0,random_z[i]);
+                    else
                     glTranslatef(-1*random_x[i],0,random_z[i]);
-                else if(/*i>5 && */i%2==0)   
+                else if(i%2==0 )   
                     glTranslatef(random_x[i],0,-1*random_z[i]);
                 else
                     glTranslatef(random_x[i],0,random_z[i]);
-               
+                
                 draw_bear();
             glPopMatrix();
 		}
+}
+
+
+// Iscrtava nisan 
+static void drawPointer() 
+{  
+	glMatrixMode(GL_PROJECTION); 
+	
+    glPushMatrix();  
+	glLoadIdentity();
+	glMatrixMode(GL_MODELVIEW); 
+	
+    glPushMatrix(); 
+	glLoadIdentity();
+	
+	
+	glColor3f(1, 0, 0);
+	gluOrtho2D(0.0, window_width, window_height, 0.0);
+	char display_string[20];
+	
+    int words = sprintf(display_string,"%s", "O");
+	
+    if(words < 0)
+		exit(1);
+	
+    glRasterPos2i(window_width/2, window_height/2); 
+	
+    int d = (int) strlen(display_string);
+	
+    for (int i = 0; i < d; i++)
+		glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, display_string[i]);
+
+	
+	glMatrixMode(GL_PROJECTION); 
+	glPopMatrix(); 
+    
+	glMatrixMode(GL_MODELVIEW); 
+	glPopMatrix(); 
+    
+	glutPostRedisplay();
+}
+
+
+static void on_mouse(int button, int state, int x, int y){
+	(void)x;
+	(void)y;
+	switch(button){
+		case GLUT_LEFT_BUTTON:
+			if(state == GLUT_DOWN){
+				if(!move_ball && timer_ongoing == 1){
+					bx = lx;
+					by = ly;
+					bz = lz;
+					t = 0;
+					glutTimerFunc(30, moving_ball, 1);
+					move_ball = 1; 
+				}
+			}		
+			break;
+	}
+}
+
+// Ispaljivanje kuglice 
+static void shoot(){
+	glPushMatrix();
+	glColor3f(0.75, 0, 0.65);
+	
+	x_ball = x_ball + t * bx * v;
+	y_ball = y_ball + 1 + t * by * v; 
+	z_ball = z_ball + t * bz * v;
+	
+	glTranslatef(x_ball, y_ball, z_ball);
+	glutSolidSphere( 0.05, 30, 30);
+	glPopMatrix();
+}
+
+static void moving_ball(int value){
+	
+	if (value != 1)
+		return;
+	
+	// Loptica je izasla izvan zidova 
+	if(x_ball > 10.0f || x_ball < -1.0f || y_ball > 5.0f || y_ball < 0.0f  || z_ball > 10.0f || z_ball <-5.0f)
+    {
+		move_ball = 0;
+        t = 0;
+	return;        
+    }
+	
+	//Provera da li je kuglica pogodila medveda
+	int i;
+	for(i = 0; i <4; i++){
+	if(z_ball  <= random_z[i] + 0.65 && z_ball >= random_z[i] - 0.65
+		&& y_ball <= random_y[i] + 0.65 && y_ball >= random_y[i] - 0.65
+		&& x_ball <= random_x[i] + 0.65 && x_ball >= random_x[i] - 0.65){
+		
+		// Novi meda
+		random_x[i] = rand()/(float)RAND_MAX*6;
+       /* if(random_x[i]<0)
+            glTranslatef( 1, 0 ,0); */
+		random_y[i] = rand()/(float)RAND_MAX;
+		random_z[i] = rand()/(float)RAND_MAX*5;
+		
+        score += 1;
+	
+		// Ako je kuglica pogodila medu nestaje
+		x_ball = 100;
+		y_ball = 100;
+		z_ball = 100;
+			
+		}
+	}
+	
+	t += 0.2f;
+    
+	if (move_ball)
+		glutTimerFunc(30, moving_ball, value);
+}
+
+static void on_mouse_motion(int x, int y){
+	
+	// Ako kursor izadje van prozora
+	if( x > window_width-2.0f){
+		glutWarpPointer(window_width/2, window_height/2);
+	}
+	else if (x < 2.0f){
+		glutWarpPointer(window_width/2, window_height/2);
+	}
+	else if (y > window_height-2.0f){
+		glutWarpPointer(window_width/2, window_height/2);
+	}
+	else if (y < 2.0f){ 
+		glutWarpPointer(window_width/2, window_height/2);
+	}
+	else {
+		
+		glutSetCursor(GLUT_CURSOR_NONE);
+	
+        angle_x += (mouse_y - y)*sensitivity_of_mouse;
+        angle_y += (x - mouse_x)*sensitivity_of_mouse;
+        
+		mouse_x = x;
+		mouse_y = y;
+	    
+		
+		//Dozvoljeno kretanje misa levo-desno
+		if(angle_x > 60.0f)
+			angle_x= 60.0f;
+		if(angle_x < -20.0f)
+			angle_x = -20.0f;
+		//Dozvoljeno kretanje misa dole-gore
+		if(angle_y > -45.0f)
+			angle_y = -45.0f;
+		if(angle_y < -135.0f)
+			angle_y = -135.0f;
+		
+        //Vektor pomeranja kamere
+        lx = cos(PI/180.0*angle_x)*cos(PI/180.0*angle_y);
+		ly = sin(PI/180.0*angle_x);
+		lz = cos(PI/180.0*angle_x) * sin(PI/180.0*angle_y);
+	}
 }
