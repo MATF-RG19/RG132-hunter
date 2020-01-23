@@ -14,14 +14,13 @@ Radnja igrice odvija se u sumi. Cilj je da pogodite sto vise meda uz pomoc koman
 4.Igricu pokrenite sa ./hunter<br/>
 <br/>
 ::video_game **Komande**:<br/>
-| Komanda | Akcija |<br/>
-| --- | ---|<br/>
-| <kbd>G</kbd>  | START |<br/>
-| <kbd>R</kbd>  | RESTART |<br/>
-| <em>desni klik na mis</em>  | ispaljivanje kuglice | <br/>
-| :arrow_up_small:  |	kretanje pravo |<br/>
-| :arrow_down_small:  |	kretanje unazad |<br/>
-| :arrow_up_small:  |	kretanje pravo |<br/>
-| :arrow_backward:  |	kretanje levo |<br/>
-| :arrow_forward: | kretanje desno |<br/>
-| <kbd>ESC</kbd>  | izlazak iz igrice |<br/>
+| Komanda | Akcija |
+| --- | --- |
+| <kbd>G</kbd>  | START |
+| <kbd>R</kbd>  | RESTART |
+| <em>desni klik na mis</em>  | ispaljivanje kuglice | 
+| :arrow_up_small:  |	kretanje pravo |
+| :arrow_down_small:  |	kretanje unazad |
+| :arrow_backward:  |	kretanje levo |
+| :arrow_forward: | kretanje desno |
+| <kbd>ESC</kbd>  | izlazak iz igrice |
