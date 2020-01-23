@@ -8,7 +8,7 @@ Radnja igrice odvija se u sumi. Cilj je da pogodite sto vise meda uz pomoc koman
 
 :wrench: **Instalacija**:
 
-1.U terminala zadati komandu za kloniranje: git clone https://github.com/MATF-RG19/RG132-hunter.git<br/>
+1.U terminalu zadati komandu za kloniranje: git clone https://github.com/MATF-RG19/RG132-hunter.git<br/>
 2.Pozicionirajte se u direktorijum sa nazivom RG132-hunter<br/>
 3.Pokrenite Makefile komandom: make<br/>
 4.Igricu pokrenite sa ./hunter<br/>
