@@ -10,23 +10,23 @@ float lx=0.0f,lz=-1.0f, ly=0.0f;
 //pozicija kamere(igraca)
 float x=5.0f, z=9.0f,  y=0.0f;
 
+//Ugao pomeranja misa i osetljivost misa
 float angle_x=0.0f, angle_y=0.0f;
-
 GLfloat mouse_x, mouse_y;
-
 float sensitivity_of_mouse = 0.2;
 
 
 // Odbrojavanje do kraja igre 
 GLfloat game_time = 0;
 int game_over;
-
 GLfloat diff_time;
 GLfloat beginTime;
 
+//Odbrojavanje
 char disp_time[1000];
 int tmp;
-
+//Parametar rotacije meda
+float rotation_parametar=0;
 
 // Broj osvojenih bodova
 int score;
@@ -34,7 +34,7 @@ char disp_score[256];
 
 static int timer_ongoing;
 
-// Tajmer za ispucavanje kuglice 
+// Tajmer za ispaljivanje kuglice 
 float t;
 static int move_ball;
 
@@ -43,7 +43,7 @@ float x_ball;
 float y_ball; 
 float z_ball; 
 
-// Vektor pravca kuglice
+// Vektor pravac kuglice
 float bx;
 float by;
 float bz;
@@ -51,30 +51,33 @@ float bz;
 // Brzina kuglice 
 float v;
 
-
 float random_x[5]; 
 float random_y[5];
 float random_z[5];
 
 static int window_width, window_height;
+
 static void on_display();
 static void on_keyboard(unsigned char key, int x, int y);
 static void on_reshape(int width, int height);
-static void specialKeys(int key, int xx, int yy);
-static void random_position_for_bears();
-
-
-static void draw_wood();
-static void draw_bear();
-static void initialize();
-
-//
-static void on_timer(int value);
+static void on_mouse(int button, int state, int x, int y);
 static void on_mouse_motion(int x, int y);
+static void on_timer(int value);
+static void specialKeys(int key, int xx, int yy);
+
+
+static void initialize();
+static void draw_wood();
+static void random_position_for_bears();
+static void draw_bear();
+
 static void moving_ball(int value);
 static void shoot();
-static void on_mouse(int button, int state, int x, int y);
 static void drawPointer() ;
+
+static void print_score();
+static void print_time();
+
 
 int main(int argc, char** argv)
 {
@@ -132,10 +135,8 @@ static void initialize()
     
      for(int i=0; i<4; i++)
     {
-        //random_x[i] = rand()/(float)RAND_MAX *9;
         random_x[i] = rand()/(float)RAND_MAX *6;
         random_y[i] = rand() / (float)RAND_MAX;
-      //  random_z[i] = rand() / (float)RAND_MAX *8;
         random_z[i] = rand() / (float)RAND_MAX *5;
 
         
@@ -148,17 +149,17 @@ static void initialize()
 	
     timer_ongoing = 0;
 	
-		
 	t = 0;
 	move_ball = 0;
-	
-        bx = 0.0f;
+	//Vektor pravca kuglice
+    bx = 0.0f;
 	by = 0.0f;
 	bz = -1.0f;
 
-    	v = 8.0f;
+	v = 8.0f;
 	
 	score = 0;
+    
     
     glEnable(GL_LIGHTING);
     glEnable(GL_LIGHT0);
@@ -201,32 +202,43 @@ static void on_keyboard(unsigned char key, int x, int y)
 				beginTime = glutGet(GLUT_ELAPSED_TIME);
 				score = 0;
 				timer_ongoing = 1;
+		
 			}
 			break;
-		
+        case 'R':
+        case 'r':
+        		beginTime = glutGet(GLUT_ELAPSED_TIME);
+				score = 0;
+                game_time=0;
+             
     }
     
     
 }
 
 static void on_timer(int value){
-	/* Provera da li callback dolazi od ogovarajuceg tajmera */
+
 	if(value != 0)
 		return;
-
-    //Broji milisekunde od prethodnog poziva ove f-je	
+	
+	//Broji milisekunde od prethodnog poziva ove f-je	
 	float newTime = glutGet(GLUT_ELAPSED_TIME);
     
 	diff_time = (newTime - beginTime)/1000.;
 	beginTime = newTime; 
  	game_time += diff_time; // odbrojavanje do kraja igre
+ 	
+    int tmp = sprintf(disp_time,"%.2f", game_time);
+
 	
-	
-	if(game_time >= 30.00){
+	rotation_parametar += 1;
+ 	
+	if(game_time >= 20.00){
 		game_over = 1;
 		timer_ongoing = 0;
-        printf("Kraj igre!\n Osvojeni broj poena je: %d\n", score);
-        exit(0);
+        print_score();
+     //   printf("Kraj igre!\nOsvojeni broj poena je: %d\n", score);
+      //  exit(0);
 	}
 	
 	if(timer_ongoing)
@@ -317,6 +329,7 @@ void draw_wood(){
 
 static void draw_bear()
 {
+    glRotatef(rotation_parametar/1000, 0, 1, 0);
     glTranslatef(0,0.65,0);
     
     glPushMatrix();
@@ -342,20 +355,17 @@ static void draw_bear()
 
 static void specialKeys(int key, int xx, int yy)
 {
-/*
-    float fraction = 0.1f;
-
-  */ float fraction = 0.15f;
+    float fraction = 0.15f; //brzina pomeraja
     
     switch(key){
     case GLUT_KEY_LEFT:
-        if (x > 9.5)
+        if (x > 9)
             x -= 0.25;
-         else if (x < -0.55)
+         else if (x < -0.5)
             x += 0.25;
-        else if (z < -4.5)
+        else if (z < -4)
             z += 0.25;
-        else if (z > 9.5)
+        else if (z > 9)
             z -= 0.25;
        
         else {
@@ -364,13 +374,13 @@ static void specialKeys(int key, int xx, int yy)
         }
         break;
     case GLUT_KEY_RIGHT:
-         if (x > 9.5)
+         if (x > 9)
             x -= 0.25;
-         else if (x < -0.55)
+         else if (x < -0.5)
             x += 0.25;
-        else if (z < -4.5)
+        else if (z < -4)
             z += 0.25;
-        else if (z > 9.5)
+        else if (z > 9)
             z -= 0.25;
        
         
@@ -422,20 +432,21 @@ static void on_display()
     
     gluLookAt( x, 1, z,
                 x+lx, 1+ly, z+lz,
-                0, 1, 0);
+                0, 1, 0 );
     
-    draw_axis(15);
+    //draw_axis(15);
     draw_wood();
     random_position_for_bears();
     
     // Koordinate kuglice- inicijalizacija
-    	x_ball = x;
+    x_ball = x;
 	y_ball =y;
 	z_ball = z;
 	shoot();
     
     drawPointer(); 
-    
+    print_time();  	
+    print_score();
     
     glutSwapBuffers();
 }
@@ -444,24 +455,19 @@ static void random_position_for_bears()
 {
      for(int i = 0; i < 4; i++)
     {
+       
 			glPushMatrix();
                 if(i%2==0)
-                    if((-1*random_x[i]) < -1)
-                    glTranslatef(random_x[i]*0.5,0,random_z[i]);
-                    else
-                    glTranslatef(-1*random_x[i],0,random_z[i]);
-                else if(i%2==0 )   
-                    glTranslatef(random_x[i],0,-1*random_z[i]);
-                else
-                    glTranslatef(random_x[i],0,random_z[i]);
-                
+                    glTranslatef(random_x[i]+0.5,0,random_z[i]);
+                else if(i%2==1)   
+                    glTranslatef(random_x[i],0,random_z[i]-0.5);
                 draw_bear();
             glPopMatrix();
-		}
+        
+    }
 }
 
-
-// Iscrtava nisan 
+// Nisan (iscrtavanje) 
 static void drawPointer() 
 {  
 	glMatrixMode(GL_PROJECTION); 
@@ -472,7 +478,6 @@ static void drawPointer()
 	
     glPushMatrix(); 
 	glLoadIdentity();
-	
 	
 	glColor3f(1, 0, 0);
 	gluOrtho2D(0.0, window_width, window_height, 0.0);
@@ -489,7 +494,6 @@ static void drawPointer()
 	
     for (int i = 0; i < d; i++)
 		glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, display_string[i]);
-
 	
 	glMatrixMode(GL_PROJECTION); 
 	glPopMatrix(); 
@@ -512,7 +516,7 @@ static void on_mouse(int button, int state, int x, int y){
 					by = ly;
 					bz = lz;
 					t = 0;
-					glutTimerFunc(30, moving_ball, 1);
+					glutTimerFunc(20, moving_ball, 1);
 					move_ball = 1; 
 				}
 			}		
@@ -547,17 +551,17 @@ static void moving_ball(int value){
 	return;        
     }
 	
-	//Provera da li je kuglica pogodila medveda
+	//Provera da li je kuglica pogodila medu
 	int i;
-	for(i = 0; i <4; i++){
-	if(z_ball  <= random_z[i] + 0.65 && z_ball >= random_z[i] - 0.65
-		&& y_ball <= random_y[i] + 0.65 && y_ball >= random_y[i] - 0.65
-		&& x_ball <= random_x[i] + 0.65 && x_ball >= random_x[i] - 0.65){
-		
+	for(i = 0; i <4; i++)
+    {
+        if(z_ball  <= random_z[i] + 0.65 && z_ball >= random_z[i] - 0.65 
+            && y_ball <= random_y[i] + 0.65 && y_ball >= random_y[i] - 0.65
+            && x_ball <= random_x[i] + 0.65 && x_ball >= random_x[i] - 0.65)
+        {
+            
 		// Novi meda
 		random_x[i] = rand()/(float)RAND_MAX*6;
-       /* if(random_x[i]<0)
-            glTranslatef( 1, 0 ,0); */
 		random_y[i] = rand()/(float)RAND_MAX;
 		random_z[i] = rand()/(float)RAND_MAX*5;
 		
@@ -568,13 +572,13 @@ static void moving_ball(int value){
 		y_ball = 100;
 		z_ball = 100;
 			
-		}
+        }
 	}
 	
 	t += 0.2f;
     
 	if (move_ball)
-		glutTimerFunc(30, moving_ball, value);
+		glutTimerFunc(20, moving_ball, value);
 }
 
 static void on_mouse_motion(int x, int y){
@@ -595,13 +599,11 @@ static void on_mouse_motion(int x, int y){
 	else {
 		
 		glutSetCursor(GLUT_CURSOR_NONE);
-	
         angle_x += (mouse_y - y)*sensitivity_of_mouse;
         angle_y += (x - mouse_x)*sensitivity_of_mouse;
         
 		mouse_x = x;
 		mouse_y = y;
-	    
 		
 		//Dozvoljeno kretanje misa levo-desno
 		if(angle_x > 60.0f)
@@ -619,4 +621,72 @@ static void on_mouse_motion(int x, int y){
 		ly = sin(PI/180.0*angle_x);
 		lz = cos(PI/180.0*angle_x) * sin(PI/180.0*angle_y);
 	}
+}
+
+//Ispis rezultata
+static void print_score()
+{
+    glMatrixMode(GL_MODELVIEW);
+    glPushMatrix();
+        
+        glLoadIdentity();
+        glMatrixMode(GL_PROJECTION);
+            glPushMatrix();
+            glLoadIdentity();
+            
+            gluOrtho2D(0, 600, 600, 0);
+            char text[11];
+            int chars=0;
+            
+            chars= sprintf(text, "%s%d", "Score:\n", score);
+            
+            glColor3f(0.75, 0, 0.25);
+            glRasterPos2d(100, 100);
+            
+            int i;
+            
+            for(i=0; i<chars; i++)
+                glutBitmapCharacter(GLUT_BITMAP_TIMES_ROMAN_24, text[i]);
+            
+            glMatrixMode(GL_PROJECTION);
+            glPopMatrix();
+    
+    glMatrixMode(GL_MODELVIEW);
+    glPopMatrix();
+}
+
+// Ispis vremena
+static void print_time() 
+{  
+	glMatrixMode(GL_PROJECTION); 
+	glPushMatrix();  
+	glLoadIdentity();
+	glMatrixMode(GL_MODELVIEW); 
+	glPushMatrix(); 
+	glLoadIdentity();
+	
+	glColor3f(0.75, 0, 0.25);
+	gluOrtho2D(0.0, window_width, window_height, 0.0);    
+    
+	
+    char display_string[20];
+	int words = sprintf(display_string,"%s", "Time:");
+	
+    glRasterPos2d(50, 50);
+
+    int d = (int) strlen(display_string);
+	for (int i = 0; i < d; i++)
+		glutBitmapCharacter(GLUT_BITMAP_HELVETICA_18, display_string[i]);
+	
+	glRasterPos2d(50, 70);
+
+    int l = (int) strlen(disp_time);
+	for (int i = 0; i < l; i++)
+		glutBitmapCharacter(GLUT_BITMAP_9_BY_15, disp_time[i]);
+	
+	glMatrixMode(GL_PROJECTION); 
+	glPopMatrix(); 
+	glMatrixMode(GL_MODELVIEW); 
+	glPopMatrix(); 
+	glutPostRedisplay();
 }
