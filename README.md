@@ -13,7 +13,8 @@ Radnja igrice odvija se u sumi. Cilj je da pogodite sto vise meda uz pomoc koman
 3.Pokrenite Makefile komandom: make<br/>
 4.Igricu pokrenite sa ./hunter<br/>
 <br/>
-::video_game **Komande**:<br/>
+:video_game: **Komande**:<br/>
+
 | Komanda | Akcija |
 | --- | --- |
 | <kbd>G</kbd>  | START |
