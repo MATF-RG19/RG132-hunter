@@ -2,7 +2,7 @@
 
 Dobrodosli :bear:
 
-**Opis igrice:**
+:evergreen_tree: **Opis igrice:**
 
 Radnja igrice odvija se u sumi. Cilj je da pogodite sto vise meda uz pomoc komandi koje zadajete misem. Kada pogodite medu povecava vam se broj poena i meda nestaje, a pojavljuje se drugi na drugom mestu. Cilj je osvojiti sto vise poena. Vreme je ograniceno na 30s.
 
