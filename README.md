@@ -19,7 +19,7 @@ Radnja igrice odvija se u sumi. Cilj je da pogodite sto vise meda uz pomoc koman
 | --- | --- |
 | <kbd>G</kbd>  | START |
 | <kbd>R</kbd>  | RESTART |
-| **desni klik na mis**  | ispaljivanje kuglice | 
+| **levi klik na mis**  | ispaljivanje kuglice | 
 | :arrow_up_small:  |	kretanje pravo |
 | :arrow_down_small:  |	kretanje unazad |
 | :arrow_backward:  |	kretanje levo |
